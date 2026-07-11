@@ -16,6 +16,10 @@ on:
 permissions:
   contents: read
 
+# 手動実行同士が同一 sync ブランチ／PR を奪い合わないよう直列化する。
+concurrency:
+  group: sync-standards
+
 jobs:
   sync:
     runs-on: ubuntu-latest
@@ -38,10 +42,13 @@ jobs:
           [ -f "$SRC_ABS" ] || { echo "::error::source not found: $SRC"; exit 1; }
           [ -n "${GH_TOKEN:-}" ] || { echo "::error::secrets.SYNC_PAT is empty. Register it in dev-commons."; exit 1; }
 
-          targets=$(grep -vE '^[[:space:]]*(#|$)' .github/sync-targets.txt)
+          # CR（Windows 改行）が混ざっても $name に \r が付かないよう除去する。
+          targets=$(grep -vE '^[[:space:]]*(#|$)' .github/sync-targets.txt | tr -d '\r')
           rc=0
+          matched=0
           for name in $targets; do
             if [ -n "$ONLY" ] && [ "$ONLY" != "$name" ]; then continue; fi
+            matched=1
             repo="ot-nemoto/$name"
             echo "::group::sync $repo"
             (
@@ -61,6 +68,7 @@ jobs:
               git -c user.name="dev-commons-sync[bot]" \
                   -c user.email="dev-commons-sync@users.noreply.github.com" \
                   commit -m "chore: sync .claude/common-rules.md from dev-commons"
+              # sync ブランチは自動生成。手コミットを足しても次回同期の force-push で上書きされる。
               git push -f origin "$SYNC_BRANCH"
               open=$(gh pr list --repo "$repo" --head "$SYNC_BRANCH" --state open --json number --jq 'length')
               if [ "$open" = "0" ]; then
@@ -73,4 +81,11 @@ jobs:
             ) || { echo "::warning::sync failed for $repo"; rc=1; }
             echo "::endgroup::"
           done
+
+          # only 指定が sync-targets.txt のどれにも一致しなかった場合は、
+          # 「緑のまま何もしない」を避けるため明示的に失敗させる。
+          if [ -n "$ONLY" ] && [ "$matched" = "0" ]; then
+            echo "::error::only='$ONLY' が sync-targets.txt のどのリポジトリにも一致しませんでした"
+            exit 1
+          fi
           exit $rc
