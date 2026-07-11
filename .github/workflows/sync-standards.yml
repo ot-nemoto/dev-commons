@@ -5,14 +5,11 @@ name: sync-standards
 # 認証は secrets.SYNC_PAT（対象リポジトリへの Contents:write / PullRequests:write を持つ PAT）。
 
 on:
-  push:
-    branches: [develop]
-    paths:
-      - "sync/.claude/common-rules.md"
+  # 手動実行のみ（自動トリガーは使わない）。
   workflow_dispatch:
     inputs:
       only:
-        description: "対象を1リポジトリに限定（例: combine-pdf-files。空なら全対象）"
+        description: "対象を1リポジトリに限定（例: combine-pdf-files。空なら sync-targets.txt 全対象）"
         required: false
         default: ""
 
