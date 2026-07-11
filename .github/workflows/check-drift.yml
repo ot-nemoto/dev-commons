@@ -35,21 +35,32 @@ jobs:
           set -euo pipefail
           [ -n "${SYNC_PAT:-}" ] || { echo "::error::secrets.SYNC_PAT is empty."; exit 1; }
 
-          resolve_files() {
-            jq -r --arg p "$1" '
-              .profiles[$p] as $x
-              | if ($x|type)=="array" then $x[]
-                else (.profiles[$x.extends][], $x.add[]) end
-            ' "$CFG"
-          }
+          # resolve_files / validate_sources は共通ライブラリから読み込む
+          source .github/scripts/sync-lib.sh
+          validate_sources "$PWD/sync"
 
+          errf=$(mktemp)
           report=""
           for name in $(jq -r '.targets | keys[]' "$CFG"); do
             repo="ot-nemoto/$name"
             profile=$(jq -r --arg n "$name" '.targets[$n]' "$CFG")
             for f in $(resolve_files "$profile"); do
               canon=$(git hash-object "sync/$f")
-              actual=$(GH_TOKEN="$SYNC_PAT" gh api "repos/$repo/contents/$f?ref=$BASE" --jq '.sha' 2>/dev/null || echo "MISSING")
+              # 404（ファイル不在）は MISSING = ドリフトとして扱う。
+              # それ以外の API エラー（認証・レート制限・5xx 等の一過性）はドリフトと
+              # 区別し、Issue を起票せず run を失敗させる（偽アラート防止）。
+              set +e
+              actual=$(GH_TOKEN="$SYNC_PAT" gh api "repos/$repo/contents/$f?ref=$BASE" --jq '.sha' 2>"$errf")
+              status=$?
+              set -e
+              if [ $status -ne 0 ]; then
+                if grep -q "HTTP 404" "$errf"; then
+                  actual="MISSING"
+                else
+                  echo "::error::API error for $repo/$f (drift ではなく API 障害の可能性): $(cat "$errf")"
+                  exit 1
+                fi
+              fi
               if [ "$canon" != "$actual" ]; then
                 report="$report
 - \`$repo\` : \`$f\` （正典 \`${canon:0:7}\` / 実体 \`${actual:0:7}\`）"
@@ -69,12 +80,13 @@ jobs:
 
 対応: dev-commons 側が正しければ \`sync-standards\` を実行して同期 PR を配布する。配布先側の変更が正しければ、その内容を \`sync/\` 配下へ逆輸入してから同期する。"
 
+          # 重複判定は全文検索でなく drift ラベルで行う（Search の CJK インデックス遅延に依存しない）
           export GH_TOKEN="$ISSUE_TOKEN"
-          existing=$(gh issue list --repo "${{ github.repository }}" --state open --search "in:title ドリフト検知" --json number --jq '.[0].number // empty')
+          existing=$(gh issue list --repo "${{ github.repository }}" --state open --label drift --json number --jq '.[0].number // empty')
           if [ -n "$existing" ]; then
             gh issue comment "$existing" --repo "${{ github.repository }}" --body "$body"
             echo "commented on existing issue #$existing"
           else
-            gh issue create --repo "${{ github.repository }}" --title "$ISSUE_TITLE" --body "$body"
+            gh issue create --repo "${{ github.repository }}" --title "$ISSUE_TITLE" --label drift --body "$body"
           fi
           exit 1

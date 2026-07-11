@@ -39,23 +39,12 @@ jobs:
 
           SRC_ROOT="$PWD/sync"
           [ -f "$CFG" ] || { echo "::error::config not found: $CFG"; exit 1; }
+          CFG="$PWD/$CFG" # クローン先へ cd した後も resolve_files が読めるよう絶対パス化
           [ -n "${GH_TOKEN:-}" ] || { echo "::error::secrets.SYNC_PAT is empty. Register it in dev-commons."; exit 1; }
 
-          # プロファイルを解決して配布ファイル一覧を返す（extends は配列プロファイルへの1段参照のみ）
-          resolve_files() {
-            jq -r --arg p "$1" '
-              .profiles[$p] as $x
-              | if ($x|type)=="array" then $x[]
-                else (.profiles[$x.extends][], $x.add[]) end
-            ' "$CFG"
-          }
-
-          # 配布ファイルがすべて sync/ に実在するか事前検証
-          for p in $(jq -r '.targets[]' "$CFG" | sort -u); do
-            for f in $(resolve_files "$p"); do
-              [ -f "$SRC_ROOT/$f" ] || { echo "::error::source not found: sync/$f (profile=$p)"; exit 1; }
-            done
-          done
+          # resolve_files / validate_sources は共通ライブラリから読み込む
+          source .github/scripts/sync-lib.sh
+          validate_sources "$SRC_ROOT"
 
           targets=$(jq -r '.targets | keys[]' "$CFG")
           rc=0
