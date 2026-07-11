@@ -1,0 +1,79 @@
+name: sync-standards
+
+# dev-commons の sync/ 配下を各リポジトリへ PR で配布する。
+# 現状の同期対象は sync/.claude/common-rules.md のみ（workflows/dependabot は後続フェーズ）。
+# 認証は secrets.SYNC_PAT（対象リポジトリへの Contents:write / PullRequests:write を持つ PAT）。
+
+on:
+  push:
+    branches: [develop]
+    paths:
+      - "sync/.claude/common-rules.md"
+  workflow_dispatch:
+    inputs:
+      only:
+        description: "対象を1リポジトリに限定（例: combine-pdf-files。空なら全対象）"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout dev-commons
+        uses: actions/checkout@v4
+
+      - name: Distribute common-rules.md via PR
+        env:
+          GH_TOKEN: ${{ secrets.SYNC_PAT }}
+          ONLY: ${{ github.event.inputs.only }}
+          SRC: sync/.claude/common-rules.md
+          DEST: .claude/common-rules.md
+          BASE: develop
+          SYNC_BRANCH: chore/sync-common-rules
+        run: |
+          set -euo pipefail
+
+          SRC_ABS="$PWD/$SRC"
+          [ -f "$SRC_ABS" ] || { echo "::error::source not found: $SRC"; exit 1; }
+          [ -n "${GH_TOKEN:-}" ] || { echo "::error::secrets.SYNC_PAT is empty. Register it in dev-commons."; exit 1; }
+
+          targets=$(grep -vE '^[[:space:]]*(#|$)' .github/sync-targets.txt)
+          rc=0
+          for name in $targets; do
+            if [ -n "$ONLY" ] && [ "$ONLY" != "$name" ]; then continue; fi
+            repo="ot-nemoto/$name"
+            echo "::group::sync $repo"
+            (
+              set -euo pipefail
+              work=$(mktemp -d)
+              git clone --depth 1 --branch "$BASE" \
+                "https://x-access-token:${GH_TOKEN}@github.com/${repo}.git" "$work"
+              cd "$work"
+              git checkout -B "$SYNC_BRANCH"
+              mkdir -p "$(dirname "$DEST")"
+              cp "$SRC_ABS" "$DEST"
+              git add "$DEST"
+              if git diff --cached --quiet; then
+                echo "already in sync; skip"
+                exit 0
+              fi
+              git -c user.name="dev-commons-sync[bot]" \
+                  -c user.email="dev-commons-sync@users.noreply.github.com" \
+                  commit -m "chore: sync .claude/common-rules.md from dev-commons"
+              git push -f origin "$SYNC_BRANCH"
+              open=$(gh pr list --repo "$repo" --head "$SYNC_BRANCH" --state open --json number --jq 'length')
+              if [ "$open" = "0" ]; then
+                gh pr create --repo "$repo" --base "$BASE" --head "$SYNC_BRANCH" \
+                  --title "chore: 共通ルール(common-rules.md)を dev-commons から同期" \
+                  --body "dev-commons の \`sync/.claude/common-rules.md\` を同期する自動 PR。内容の正は dev-commons 側。このファイル(\`.claude/common-rules.md\`)はリポジトリ内で直接編集しないこと（次回同期で上書きされる）。"
+              else
+                echo "PR already open; branch updated"
+              fi
+            ) || { echo "::warning::sync failed for $repo"; rc=1; }
+            echo "::endgroup::"
+          done
+          exit $rc
