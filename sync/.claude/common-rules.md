@@ -34,7 +34,7 @@
 | `docs/product.md` | プロダクトの目的・対象ユーザー・ゴール | 目的、対象ユーザー、成功指標 |
 | `docs/architecture.md` | 設計方針・意図・契約・バージョン gotcha | 技術スタック、環境変数（利用する場合）、契約（データフロー / API / 認証など該当するもの）、非機能要件（該当する場合）、バージョン gotcha |
 | `docs/ui.md` | 画面契約（機能仕様・表示状態・UI規約） | 画面一覧、画面遷移図（Mermaid）、画面機能仕様、表示状態（Loading / Empty / Error）、UI規約 |
-| `docs/development.md` | 開発・運用手順 | ローカルセットアップ、環境変数、デプロイ手順 |
+| `docs/development.md` | 開発・運用手順 | ローカルセットアップ、環境変数（利用する場合）、デプロイ手順 |
 
 > 機能要件は `ui.md`、非機能要件は `architecture.md` に集約し、`requirements.md` は持たない。
 > テスト方針は本ルールの「テストルール」に、進捗・タスク管理は GitHub Issues / Milestone に集約し、`testing.md` / `e2e-scenarios.md` / `tasks.md` は持たない。
