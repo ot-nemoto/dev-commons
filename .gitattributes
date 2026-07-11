@@ -1,0 +1,5 @@
+# sync-targets.txt などをスクリプトで行単位パースするため、改行は LF に固定する
+# （Windows での再編集で CRLF が混ざると for ループの値に \r が付いて失敗するのを防ぐ）
+*.txt text eol=lf
+*.sh text eol=lf
+*.yml text eol=lf
