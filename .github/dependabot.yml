@@ -1,0 +1,12 @@
+# dev-commons 自身のワークフロー（.github/workflows/）の actions を監視する。
+# ここへの bump PR が「actions の新版が出た」通知役。新版が来たら sync/ 配下の
+# 雛形にも同じバージョンを手で反映し、sync-standards で各リポジトリへ配布する
+# （dependabot は sync/ 配下の雛形をスキャンしないため、雛形の bump は手動）。
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    target-branch: develop
