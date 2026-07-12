@@ -62,8 +62,8 @@ jobs:
                 fi
               fi
               if [ "$canon" != "$actual" ]; then
-                report="$report
-- \`$repo\` : \`$f\` （正典 \`${canon:0:7}\` / 実体 \`${actual:0:7}\`）"
+                # 注意: ブロックスカラー内で列0の継続行を書くと YAML が壊れるため、$'\n' 連結の単一行で組む
+                report="$report"$'\n'"- \`$repo\` : \`$f\` （正典 \`${canon:0:7}\` / 実体 \`${actual:0:7}\`）"
               fi
             done
           done
@@ -74,11 +74,8 @@ jobs:
           fi
 
           echo "::error::drift detected:$report"
-          body="check-drift が正典との不一致を検知した（run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}）。
-
-**不一致ファイル:**$report
-
-対応: dev-commons 側が正しければ \`sync-standards\` を実行して同期 PR を配布する。配布先側の変更が正しければ、その内容を \`sync/\` 配下へ逆輸入してから同期する。"
+          run_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          body="check-drift が正典との不一致を検知した（run: $run_url）。"$'\n\n'"**不一致ファイル:**$report"$'\n\n'"対応: dev-commons 側が正しければ \`sync-standards\` を実行して同期 PR を配布する。配布先側の変更が正しければ、その内容を \`sync/\` 配下へ逆輸入してから同期する。"
 
           # 重複判定は全文検索でなく drift ラベルで行う（Search の CJK インデックス遅延に依存しない）
           export GH_TOKEN="$ISSUE_TOKEN"
