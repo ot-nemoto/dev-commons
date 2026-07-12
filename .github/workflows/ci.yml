@@ -1,0 +1,30 @@
+name: CI
+
+# dev-commons 自身のワークフローと、配布雛形（sync/.github/workflows/）の両方を
+# actionlint で検証する。invalid YAML・シェル構文崩れ・actions の誤用を
+# マージ前に機械検出する（#22 の再発防止）。
+
+on:
+  pull_request:
+    branches:
+      - develop
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  actionlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install actionlint
+        run: bash <(curl -fsSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash) 1.7.7
+
+      - name: Lint dev-commons workflows (.github/workflows)
+        run: ./actionlint -color
+
+      - name: Lint distributed templates (sync/.github/workflows)
+        run: ./actionlint -color sync/.github/workflows/*.yml
