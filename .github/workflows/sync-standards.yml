@@ -1,15 +1,15 @@
 name: sync-standards
 
 # dev-commons の sync/ 配下を各リポジトリへ PR で配布する。
-# 現状の同期対象は sync/.claude/common-rules.md のみ（workflows/dependabot は後続フェーズ）。
-# 認証は secrets.SYNC_PAT（対象リポジトリへの Contents:write / PullRequests:write を持つ PAT）。
+# 配布ファイルと対象は .github/sync-config.json（プロファイル定義）を正とする。
+# 認証は secrets.SYNC_PAT（対象リポジトリへの Contents:write / PullRequests:write / Workflows:write を持つ PAT）。
 
 on:
   # 手動実行のみ（自動トリガーは使わない）。
   workflow_dispatch:
     inputs:
       only:
-        description: "対象を1リポジトリに限定（例: combine-pdf-files。空なら sync-targets.txt 全対象）"
+        description: "対象を1リポジトリに限定（例: combine-pdf-files。空なら sync-config.json の全対象）"
         required: false
         default: ""
 
@@ -25,32 +25,36 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout dev-commons
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
-      - name: Distribute common-rules.md via PR
+      - name: Distribute standards via PR
         env:
           GH_TOKEN: ${{ secrets.SYNC_PAT }}
           ONLY: ${{ github.event.inputs.only }}
-          SRC: sync/.claude/common-rules.md
-          DEST: .claude/common-rules.md
+          CFG: .github/sync-config.json
           BASE: develop
-          SYNC_BRANCH: chore/sync-common-rules
+          SYNC_BRANCH: chore/sync-standards
         run: |
           set -euo pipefail
 
-          SRC_ABS="$PWD/$SRC"
-          [ -f "$SRC_ABS" ] || { echo "::error::source not found: $SRC"; exit 1; }
+          SRC_ROOT="$PWD/sync"
+          [ -f "$CFG" ] || { echo "::error::config not found: $CFG"; exit 1; }
+          CFG="$PWD/$CFG" # クローン先へ cd した後も resolve_files が読めるよう絶対パス化
           [ -n "${GH_TOKEN:-}" ] || { echo "::error::secrets.SYNC_PAT is empty. Register it in dev-commons."; exit 1; }
 
-          # CR（Windows 改行）が混ざっても $name に \r が付かないよう除去する。
-          targets=$(grep -vE '^[[:space:]]*(#|$)' .github/sync-targets.txt | tr -d '\r')
+          # resolve_files / validate_sources は共通ライブラリから読み込む
+          source .github/scripts/sync-lib.sh
+          validate_sources "$SRC_ROOT"
+
+          targets=$(jq -r '.targets | keys[]' "$CFG")
           rc=0
           matched=0
           for name in $targets; do
             if [ -n "$ONLY" ] && [ "$ONLY" != "$name" ]; then continue; fi
             matched=1
             repo="ot-nemoto/$name"
-            echo "::group::sync $repo"
+            profile=$(jq -r --arg n "$name" '.targets[$n]' "$CFG")
+            echo "::group::sync $repo (profile=$profile)"
             (
               set -euo pipefail
               work=$(mktemp -d)
@@ -58,23 +62,29 @@ jobs:
                 "https://x-access-token:${GH_TOKEN}@github.com/${repo}.git" "$work"
               cd "$work"
               git checkout -B "$SYNC_BRANCH"
-              mkdir -p "$(dirname "$DEST")"
-              cp "$SRC_ABS" "$DEST"
-              git add "$DEST"
+              changed=""
+              for f in $(resolve_files "$profile"); do
+                mkdir -p "$(dirname "$f")"
+                cp "$SRC_ROOT/$f" "$f"
+                git add "$f"
+                if ! git diff --cached --quiet -- "$f"; then changed="$changed $f"; fi
+              done
               if git diff --cached --quiet; then
                 echo "already in sync; skip"
                 exit 0
               fi
               git -c user.name="dev-commons-sync[bot]" \
                   -c user.email="dev-commons-sync@users.noreply.github.com" \
-                  commit -m "chore: sync .claude/common-rules.md from dev-commons"
+                  commit -m "chore: sync dev standards from dev-commons"
               # sync ブランチは自動生成。手コミットを足しても次回同期の force-push で上書きされる。
               git push -f origin "$SYNC_BRANCH"
               open=$(gh pr list --repo "$repo" --head "$SYNC_BRANCH" --state open --json number --jq 'length')
               if [ "$open" = "0" ]; then
                 gh pr create --repo "$repo" --base "$BASE" --head "$SYNC_BRANCH" \
-                  --title "chore: 共通ルール(common-rules.md)を dev-commons から同期" \
-                  --body "dev-commons の \`sync/.claude/common-rules.md\` を同期する自動 PR。内容の正は dev-commons 側。このファイル(\`.claude/common-rules.md\`)はリポジトリ内で直接編集しないこと（次回同期で上書きされる）。"
+                  --title "chore: 開発標準（common-rules / workflows）を dev-commons から同期" \
+                  --body "dev-commons の \`sync/\` 配下を同期する自動 PR（profile: $profile）。更新ファイル:$changed
+
+配布ファイルの正は dev-commons 側。これらのファイルはリポジトリ内で直接編集しないこと（次回同期で上書きされる）。"
               else
                 echo "PR already open; branch updated"
               fi
@@ -82,10 +92,10 @@ jobs:
             echo "::endgroup::"
           done
 
-          # only 指定が sync-targets.txt のどれにも一致しなかった場合は、
+          # only 指定が sync-config.json のどれにも一致しなかった場合は、
           # 「緑のまま何もしない」を避けるため明示的に失敗させる。
           if [ -n "$ONLY" ] && [ "$matched" = "0" ]; then
-            echo "::error::only='$ONLY' が sync-targets.txt のどのリポジトリにも一致しませんでした"
+            echo "::error::only='$ONLY' が sync-config.json のどのリポジトリにも一致しませんでした"
             exit 1
           fi
           exit $rc

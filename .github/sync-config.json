@@ -1,0 +1,30 @@
+{
+  "_comment": "sync-standards / check-drift の配布設定。profiles はプロファイル名→配布ファイル一覧（パスは sync/ 起点かつ配布先リポジトリ内の配置先）。extends は配列プロファイルのみ1段参照可。targets はリポジトリ名（ot-nemoto/<name>）→プロファイル名。",
+  "profiles": {
+    "base": [
+      ".claude/common-rules.md",
+      ".github/workflows/ci.yml",
+      ".github/workflows/auto-pr-to-master.yml",
+      ".github/workflows/bump-version.yml",
+      ".github/workflows/release.yml"
+    ],
+    "pages-app": {
+      "extends": "base",
+      "add": [".github/workflows/deploy-github-pages.yml"]
+    },
+    "workers-app": {
+      "extends": "base",
+      "add": [".github/workflows/deploy-cloudflare-workers.yml"]
+    }
+  },
+  "targets": {
+    "kintone-viewer": "workers-app",
+    "github-diff-viewer": "pages-app",
+    "github-issue-viewer": "pages-app",
+    "pdf-viewer": "pages-app",
+    "combine-pdf-files": "pages-app",
+    "slow-query-viewer": "pages-app",
+    "account-sql-generator": "pages-app",
+    "classmethod-pricing-chart": "pages-app"
+  }
+}
