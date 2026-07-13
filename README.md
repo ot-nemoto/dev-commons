@@ -39,7 +39,7 @@ dev-commons/
 ## 配布の仕組み（sync-standards）
 
 - 配布ファイルと対象は `.github/sync-config.json` を正とする:
-  - **profiles**: `base`（common-rules + ci / auto-pr / bump / release）に、デプロイ方式別の `pages-app` / `workers-app` が deploy ワークフローを追加する
+  - **profiles**: `base`（common-rules + ci / auto-pr / bump / release）に、デプロイ方式別のプロファイルが差分を加える。`pages-app` / `workers-app` は deploy ワークフローを追加し、`vercel-app` は base のみ（Vercel の Git 連携でデプロイするため deploy ワークフローを持たない）
   - **targets**: リポジトリ名 → プロファイル名のマップ。リポジトリの追加・デプロイ方式変更はここを1行直すだけ
 - **手動実行のみ**（`workflow_dispatch`）。`only` で1リポジトリに限定できる
 - 各対象を clone → プロファイルのファイル一式を上書き → **差分がなければスキップ（冪等）** → あれば `chore/sync-standards` ブランチで develop 向けに **PR 起票**（直接 push しない）
@@ -68,5 +68,5 @@ dev-commons/
 ## 新規リポジトリの作り方
 
 1. `scaffold/` の中身（`CLAUDE.md`・`.github/dependabot.yml`）をコピーし、`CLAUDE.md` の固有部（ドキュメント採否・テスト対象・独自ルール）を埋める
-2. `.github/sync-config.json` の `targets` にリポジトリ名とプロファイル（`pages-app` / `workers-app`）を追加する
+2. `.github/sync-config.json` の `targets` にリポジトリ名とプロファイル（`pages-app` / `workers-app` / `vercel-app`）を追加する
 3. `sync-standards` を `only=<リポジトリ名>` で実行し、共通ルールとワークフロー一式を受け取る
