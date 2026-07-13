@@ -70,3 +70,5 @@ dev-commons/
 1. `scaffold/` の中身（`CLAUDE.md`・`.github/dependabot.yml`）をコピーし、`CLAUDE.md` の固有部（ドキュメント採否・テスト対象・独自ルール）を埋める
 2. `.github/sync-config.json` の `targets` にリポジトリ名とプロファイル（`pages-app` / `workers-app` / `vercel-app`）を追加する
 3. `sync-standards` を `only=<リポジトリ名>` で実行し、共通ルールとワークフロー一式を受け取る
+
+> **`.claude/` を gitignore する場合の注意**: Claude Code のスクラッチ等で `.claude/` を無視するリポジトリでは、配布される `.claude/common-rules.md` を追跡できるよう `.gitignore` を **`.claude/` 全体除外ではなく `.claude/*` + `!.claude/common-rules.md`** にする。全体除外のままだと sync が common-rules.md を配布できず、`sync-standards` が `::error::` で当該リポを失敗させる（欠落したまま「成功」する事故を防ぐため）。
