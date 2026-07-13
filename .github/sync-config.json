@@ -2,6 +2,7 @@
   "_comment": "sync-standards / check-drift の配布設定。profiles はプロファイル名→配布ファイル一覧（パスは sync/ 起点かつ配布先リポジトリ内の配置先）。extends は配列プロファイルのみ1段参照可。targets はリポジトリ名（ot-nemoto/<name>）→プロファイル名。",
   "profiles": {
     "base": [
+      "CLAUDE.md",
       ".claude/common-rules.md",
       ".github/workflows/ci.yml",
       ".github/workflows/auto-pr-to-master.yml",
@@ -18,7 +19,7 @@
     },
     "vercel-app": {
       "extends": "base",
-      "add": []
+      "add": [".claude/api-rules.md"]
     }
   },
   "targets": {

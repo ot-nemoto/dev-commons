@@ -1,10 +1,10 @@
-# CLAUDE.md
+# project.md（このリポジトリ固有の情報）
 
-開発の共通規約は `.claude/common-rules.md`（dev-commons から同期）に集約している。本ファイルはそれをインポートし、**このリポジトリ固有の情報のみ**を記載する。
-
-@.claude/common-rules.md
-
----
+> このファイルは **このリポジトリが所有** する。自由に編集してよく、dev-commons からは同期されない（上書きされない）。
+> 共通ルールは `.claude/common-rules.md`（dev-commons が配布）にあり、ルートの `CLAUDE.md` が本ファイルと共に import する。
+> 共通ルールと矛盾する記述は、import 順で後ろにある本ファイルの内容が優先される。
+>
+> **API を提供するリポジトリのみ**: 本バナー直後（下記の各セクションより前）に `@.claude/api-rules.md` の import 行を1行足す。api-rules.md は `vercel-app` プロファイルで配布される。
 
 ## 作業開始時のチェックリスト
 
