@@ -4,6 +4,7 @@
     "base": [
       "CLAUDE.md",
       ".claude/common-rules.md",
+      ".claude/api-rules.md",
       ".github/workflows/ci.yml",
       ".github/workflows/auto-pr-to-master.yml",
       ".github/workflows/bump-version.yml",
@@ -19,7 +20,7 @@
     },
     "vercel-app": {
       "extends": "base",
-      "add": [".claude/api-rules.md"]
+      "add": []
     }
   },
   "targets": {
