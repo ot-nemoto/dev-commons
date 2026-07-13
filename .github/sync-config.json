@@ -15,6 +15,10 @@
     "workers-app": {
       "extends": "base",
       "add": [".github/workflows/deploy-cloudflare-workers.yml"]
+    },
+    "vercel-app": {
+      "extends": "base",
+      "add": []
     }
   },
   "targets": {
@@ -25,6 +29,9 @@
     "combine-pdf-files": "pages-app",
     "slow-query-viewer": "pages-app",
     "account-sql-generator": "pages-app",
-    "classmethod-pricing-chart": "pages-app"
+    "classmethod-pricing-chart": "pages-app",
+    "daily-hub": "vercel-app",
+    "eval-hub": "vercel-app",
+    "link-hub": "vercel-app"
   }
 }
