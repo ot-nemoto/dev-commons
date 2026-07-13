@@ -18,19 +18,20 @@
   - リファレンス UI は**認証の背後**に置く（公開 API でない限り未認証で仕様を晒さない）。
 - **OpenAPI（配信 spec）を仕様の唯一の正とする**。手書きの spec を別に持たない。スキーマ定義はコード（例: 各リポジトリのスキーマ層）を正とし、そこから spec を導出する。
 
-## `docs/api.md` のドキュメント契約
+## API ドキュメントは配信 spec に一本化する
 
-`docs/api.md` は**配信 spec を「仕様の正」として指し、スキーマ本体・型定義を再掲しない**。意図・契約・運用のみを書く。
+API のドキュメントは**配信 spec ＋ リファレンス UI（Stoplight 等）に集約**する。別途 `docs/api.md` を設けない（内容が spec と二重化しドリフト源になるため）。人間向けのナラティブも spec に含める:
 
-必須セクション:
+| 内容 | 置き場所（配信 spec 内） |
+|------|-------------------------|
+| 概要・意図 | `info.description`（Markdown） |
+| 認証（方式・キー発行手順・保護対象） | `securitySchemes` ＋ `info.description` |
+| 共通仕様・エラーレスポンスの形（例: `{ error }`） | 共有 `components/responses` ＋ `info.description` |
+| エンドポイント一覧・request/response 定義 | `paths`（＝ リファレンス UI が描画。これが仕様の正） |
+| クイックスタート（`curl` 等） | `info.description`（リファレンス UI の code sample 自動生成も活用） |
 
-| セクション | 内容 |
-|-----------|------|
-| API リファレンス（仕様の正） | 配信中の OpenAPI（`/openapi.json` 等）とリファレンス UI（`/api-reference` 等）への導線。「仕様の正はここ」と明示する |
-| 認証 | 認証方式（API キー等）・付与方法・保護対象 |
-| 共通仕様（エラーレスポンス） | 共通のレスポンス形・エラーレスポンスの形（例: `{ error }`）とステータスの規約 |
-| エンドポイント一覧 | 提供エンドポイントの一覧（詳細な request/response 定義は spec を正とし再掲しない） |
-| クイックスタート | 最小の呼び出し例（`curl` 等） |
+- README には配信 spec / リファレンス UI（`/openapi.json`・`/api-reference` 等）への**導線を1つ**置く。
+- `info.description` に流し込む散文をリポジトリ内の Markdown に置いて spec ビルダーから読み込む形にしてもよい（実装詳細。ただし**独立した `docs/api.md` としては持たない**）。
 
 ## テスト
 
@@ -43,4 +44,4 @@
 新規に API 提供を始めるリポジトリは、実装済みの **link-hub** を正準リファレンスとして参照し、そこから複製して着手する。
 
 - リポジトリ: https://github.com/ot-nemoto/link-hub
-- 参照ポイント: OpenAPI 配信ルート・API リファレンス UI ルート・spec ビルダー・`docs/api.md`
+- 参照ポイント: OpenAPI 配信ルート・API リファレンス UI ルート・spec ビルダー（`info.description` へのナラティブ集約含む）
