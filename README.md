@@ -91,7 +91,7 @@ dev-commons/
 
 ## 新規リポジトリの作り方
 
-1. `scaffold/` の中身（`.claude/project.md`・`.github/dependabot.yml`）をコピーし、`project.md` の固有部（ドキュメント採否・テスト対象・独自ルール）を埋める
+1. `scaffold/` の中身（`.claude/project.md`・`.github/dependabot.yml`）をコピーする（`project.md` はこのリポでしか通用しない非自明な事項があれば書く。無ければ空でよい）
 2. `.github/sync-config.json` の `targets` にリポジトリ名とプロファイル（`pages-app` / `workers-app` / `vercel-app`）を追加する
 3. `sync-standards` を `only=<リポジトリ名>` で実行し、`CLAUDE.md`・共通ルール・`api-rules.md`・ワークフロー一式を受け取る（`api-rules.md` は API を提供しないリポでは適用対象外）
 
