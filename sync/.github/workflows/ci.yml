@@ -34,8 +34,10 @@ jobs:
         if: steps.prisma_check.outputs.exists == 'true'
         run: npx prisma generate
 
-      - name: Lint
-        run: npm run lint
+      # biome ci は lint とフォーマットを書き換えずに検査する。
+      # package.json の script に依存させない（リポジトリ側の lint 定義がぶれても検査が止まらないため）。
+      - name: Lint & Format check
+        run: npx biome ci .
 
       - name: Unit test
         run: npm run test
