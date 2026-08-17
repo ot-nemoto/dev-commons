@@ -21,6 +21,10 @@
     "vercel-app": {
       "extends": "base",
       "add": []
+    },
+    "render-app": {
+      "extends": "base",
+      "add": []
     }
   },
   "targets": {
@@ -34,6 +38,7 @@
     "classmethod-pricing-chart": "pages-app",
     "daily-hub": "vercel-app",
     "eval-hub": "vercel-app",
-    "link-hub": "vercel-app"
+    "link-hub": "vercel-app",
+    "aws-certification-notes": "render-app"
   }
 }
