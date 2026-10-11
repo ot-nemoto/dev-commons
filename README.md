@@ -22,11 +22,13 @@ dev-commons/
 │  └─ .github/
 │     └─ workflows/
 │        ├─ ci.yml / auto-pr-to-master.yml / bump-version.yml / release.yml   # base（全リポジトリ）
+│        ├─ secret-scan.yml                 # base（全リポジトリ・gitleaks）
 │        ├─ deploy-github-pages.yml         # pages-app プロファイル
 │        └─ deploy-cloudflare-workers.yml   # workers-app プロファイル
 ├─ scaffold/                       # 【一度だけ】新規リポジトリ作成時にコピーする雛形（同期対象外）
 │  ├─ .claude/
 │  │  └─ project.md                # リポジトリ固有情報の雛形（以後は各リポジトリが所有・自由に編集）
+│  ├─ .gitleaks.toml               # 秘密情報スキャンの設定の雛形（以後は各リポジトリが所有: 固有の allowlist / ルールを持つ）
 │  └─ .github/
 │     └─ dependabot.yml            # 初期設定の雛形（以後は各リポジトリが正: 固有の ignore 等を持ってよい）
 └─ .github/
@@ -37,7 +39,9 @@ dev-commons/
       └─ check-drift.yml           # 配布先が正典と一致するか検証（週1 + 手動）
 ```
 
-**`sync/` と `scaffold/` を分ける理由**: `sync/` は「各リポジトリへ配布して上書き」しても安全なものだけを置く。各リポジトリが独自に育てるファイル（リポジトリ固有情報の `.claude/project.md`、固有の ignore を持つ `dependabot.yml`）は `scaffold/`（同期対象外）に置くことで、同期で誤って上書きする事故を構造的に防ぐ。
+**`sync/` と `scaffold/` を分ける理由**: `sync/` は「各リポジトリへ配布して上書き」しても安全なものだけを置く。各リポジトリが独自に育てるファイル（リポジトリ固有情報の `.claude/project.md`、固有の ignore を持つ `dependabot.yml`、固有の allowlist / ルールを持つ `.gitleaks.toml`）は `scaffold/`（同期対象外）に置くことで、同期で誤って上書きする事故を構造的に防ぐ。
+
+秘密情報スキャン（`secret-scan.yml`）もこの分け方に従う。**手順は全リポジトリ共通なのでワークフローは配布し、検出ルールと除外はリポジトリごとに異なるので `.gitleaks.toml` は配布しない**。`.gitleaks.toml` が無くても既定ルールで動作する。
 
 ### ルールの3層構造
 

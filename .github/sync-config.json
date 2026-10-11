@@ -6,6 +6,7 @@
       ".claude/common-rules.md",
       ".claude/api-rules.md",
       ".github/workflows/ci.yml",
+    ".github/workflows/secret-scan.yml",
       ".github/workflows/auto-pr-to-master.yml",
       ".github/workflows/bump-version.yml",
       ".github/workflows/release.yml"
