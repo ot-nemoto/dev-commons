@@ -66,12 +66,14 @@ dev-commons/
 ## 配布の仕組み（sync-standards）
 
 - 配布ファイルと対象は `.github/sync-config.json` を正とする:
-  - **profiles**: `base`（`CLAUDE.md` + common-rules + api-rules + ci / auto-pr / bump / release）に、各プロファイルが差分を加える。`pages-app` / `workers-app` は deploy ワークフローを追加、`vercel-app` は base のみ（デプロイは Vercel の Git 連携のため deploy ワークフローを持たない）
+  - **profiles**: `base`（`CLAUDE.md` + common-rules + api-rules + ci / secret-scan / auto-pr / bump / release）に、各プロファイルが差分を加える。`pages-app` / `workers-app` は deploy ワークフローを追加、`vercel-app` は base のみ（デプロイは Vercel の Git 連携のため deploy ワークフローを持たない）
   - **targets**: リポジトリ名 → プロファイル名のマップ。リポジトリの追加・デプロイ方式変更はここを1行直すだけ
 - **手動実行のみ**（`workflow_dispatch`）。`only` で1リポジトリに限定できる
 - 各対象を clone → プロファイルのファイル一式を上書き → **差分がなければスキップ（冪等）** → あれば `chore/sync-standards` ブランチで develop 向けに **PR 起票**（直接 push しない）
 - 各リポジトリ所有のファイル（`.claude/project.md`・`dependabot.yml`）には**触れない**（`CLAUDE.md` は base の配布対象なので上書きされる。リポジトリ固有情報は `project.md` 側に置く）
 - 認証は `secrets.SYNC_PAT`（対象リポジトリへの **Contents / Pull requests / Workflows** の write が必要。workflows 配布のため Workflows 権限が必須）
+
+> **週次スキャンの注意**: GitHub は 60 日間アクティビティの無いリポジトリの scheduled workflow を自動停止する。休眠中のリポジトリでは `secret-scan` の週次実行が止まるが、履歴も変わらないため実害は小さい。再開したい場合はリポジトリの Actions 画面から有効化する。
 
 ## ドリフト検証（check-drift）
 
@@ -84,6 +86,7 @@ dev-commons/
 
 - ワークフローで使う actions（`actions/checkout` 等）のバージョンは **dev-commons の雛形で一元管理**する。アプリ側リポジトリの dependabot に `github-actions` エコシステムは**入れない**（入れるとリポジトリ側で自走 bump され、同期と競合する）
 - dev-commons 自身の dependabot（`.github/dependabot.yml`）が自リポジトリの workflows への bump PR を出す。これが「新版が出た」通知役。**新版が来たら `sync/` 配下の雛形にも同じバージョンを手で反映し、sync-standards で配布する**（dependabot は `sync/` 配下をスキャンしない）
+- **ワークフローが `curl` で取得する CLI（`secret-scan.yml` の gitleaks）は dependabot の監視対象外**。新版の通知が来ないため手動で追従する。更新時は `GITLEAKS_VERSION` と `GITLEAKS_SHA256` を**必ず同時に**更新する（公式 `gitleaks_<version>_checksums.txt` の `linux_x64.tar.gz` の値）。放置すると新しい検出ルールが配布先に届かない
 
 ## 各リポジトリでの独自ルール
 
@@ -95,7 +98,7 @@ dev-commons/
 
 ## 新規リポジトリの作り方
 
-1. `scaffold/` の中身（`.claude/project.md`・`.github/dependabot.yml`）をコピーする（`project.md` はこのリポでしか通用しない非自明な事項があれば書く。無ければ空でよい）
+1. `scaffold/` の中身（`.claude/project.md`・`.github/dependabot.yml`・`.gitleaks.toml`）をコピーする（`project.md` はこのリポでしか通用しない非自明な事項があれば書く。無ければ空でよい。`.gitleaks.toml` は無くても既定ルールで動作する）
 2. `.github/sync-config.json` の `targets` にリポジトリ名とプロファイル（`pages-app` / `workers-app` / `vercel-app`）を追加する
 3. `sync-standards` を `only=<リポジトリ名>` で実行し、`CLAUDE.md`・共通ルール・`api-rules.md`・ワークフロー一式を受け取る（`api-rules.md` は API を提供しないリポでは適用対象外）
 
