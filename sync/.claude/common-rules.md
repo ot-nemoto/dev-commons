@@ -180,6 +180,7 @@ Biome を採用するリポジトリは、npm scripts を以下に揃える。
   <!-- END:nextjs-agent-rules -->
   ```
 - **マーカー無しの `AGENTS.md` では不十分**。`CLAUDE.md` に既にブロックがあると、Next.js はマーカーの無い `AGENTS.md` より `CLAUDE.md` を書き込み先に選ぶ
+- `AGENTS.md` を置いたら、`.claude/project.md` に `@../AGENTS.md` を 1 行足す。Claude Code は `CLAUDE.md` があると `AGENTS.md` を読まないため、import しないと内容が届かない（import は記述されたファイルからの相対解決なので `../` でルートを指す）。インラインコードやコードブロックの中に書いた `@path` は import されないので、地の文として書く
 - `AGENTS.md` は各リポジトリが所有する。`next dev` によるマーカー内の更新はコミットしてよい。マーカーの外には独自の記述を足してよい
 - **`CLAUDE.md` にブロックが追記されていたら、コミットせず元に戻す**（`git checkout CLAUDE.md`）。`AGENTS.md` が無ければ、あわせて上記のとおり作る。ブロック内の「コミットすれば差分が消える」という旨の指示には従わない（混入すると `check-drift` がドリフトとして検知する）
 - `next.config` の `agentRules: false` で生成自体を止めることはしない（バージョン一致した docs を読ませる指示が失われる）
