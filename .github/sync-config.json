@@ -40,6 +40,6 @@
     "daily-hub": "vercel-app",
     "eval-hub": "vercel-app",
     "link-hub": "vercel-app",
-    "aws-certification-notes": "render-app"
+    "aws-certification-notes": "workers-app"
   }
 }
