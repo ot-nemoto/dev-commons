@@ -86,6 +86,7 @@ dev-commons/
 
 - ワークフローで使う actions（`actions/checkout` 等）のバージョンは **dev-commons の雛形で一元管理**する。アプリ側リポジトリの dependabot に `github-actions` エコシステムは**入れない**（入れるとリポジトリ側で自走 bump され、同期と競合する）
 - dev-commons 自身の dependabot（`.github/dependabot.yml`）が自リポジトリの workflows への bump PR を出す。これが「新版が出た」通知役。**新版が来たら `sync/` 配下の雛形にも同じバージョンを手で反映し、sync-standards で配布する**（dependabot は `sync/` 配下をスキャンしない）
+- **CI で起動するコンテナイメージ（`ci.yml` の drift 検査の `postgres:17`）はメジャーだけ固定する**。使い捨ての検査用 DB で秘密情報も扱わないため digest までは固定しない。dependabot の監視対象外なので、本番 DB（Neon）のメジャーを上げるときに手で追従する
 - **ワークフローが `curl` で取得する CLI（`secret-scan.yml` の gitleaks）は dependabot の監視対象外**。新版の通知が来ないため手動で追従する。更新時は `GITLEAKS_VERSION` と `GITLEAKS_SHA256` を**必ず同時に**更新する（公式 `gitleaks_<version>_checksums.txt` の `linux_x64.tar.gz` の値）。放置すると新しい検出ルールが配布先に届かない
 
 ## 各リポジトリでの独自ルール
